@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistem Deteksi Stroke</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f0f2f5;
+      --card: #ffffff;
+      --card-header: #e8eaed;
+      --border: #d1d5db;
+      --text: #1a1d23;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --accent-light: #dbeafe;
+      --danger: #dc2626;
+      --danger-light: #fee2e2;
+      --success: #16a34a;
+      --success-light: #dcfce7;
+      --warning: #d97706;
+      --warning-light: #fef3c7;
+      --btn-default: #ffffff;
+      --btn-selected: #1a1d23;
+      --radius: 10px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 32px 16px;
+    }
+
+    .page-title {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .page-title h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: var(--card);
+      display: inline-block;
+      padding: 12px 36px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      letter-spacing: -0.3px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      max-width: 1000px;
+      margin: 0 auto;
+      align-items: start;
+    }
+
+    @media (max-width: 700px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    /* ---- FORM CARD ---- */
+    .form-card {
+      background: var(--card-header);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .form-header {
+      background: var(--card-header);
+      padding: 16px 20px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .form-header h2 { font-size: 1rem; font-weight: 700; }
+    .form-header p { font-size: 0.82rem; color: var(--muted); margin-top: 2px; }
+
+    .form-body { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+
+    /* ---- QUESTION BOX ---- */
+    .q-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+    }
+
+    .q-label {
+      font-size: 0.88rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .q-input {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      font-family: inherit;
+      font-size: 0.88rem;
+      color: var(--text);
+      background: #fafafa;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .q-input:focus { border-color: var(--accent); background: #fff; }
+    .q-input::placeholder { color: #b0b7c3; }
+
+    /* ---- TOGGLE BUTTONS ---- */
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .toggle-btn {
+      padding: 8px 18px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: var(--btn-default);
+      font-family: inherit;
+      font-size: 0.84rem;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.15s;
+      flex: 1;
+      text-align: center;
+      min-width: 80px;
+    }
+
+    .toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    .toggle-btn.active {
+      background: var(--btn-selected);
+      color: #fff;
+      border-color: var(--btn-selected);
+    }
+
+    /* ---- SUBMIT BUTTON ---- */
+    .submit-wrap { text-align: right; padding: 0 12px 12px; }
+
+    .submit-btn {
+      padding: 11px 40px;
+      background: var(--text);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .submit-btn:hover { background: #374151; transform: translateY(-1px); }
+    .submit-btn:active { transform: translateY(0); }
+    .submit-btn:disabled { background: #9ca3af; cursor: not-allowed; transform: none; }
+
+    /* ---- RESULT CARD ---- */
+    .result-card {
+      background: var(--card-header);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .result-header {
+      padding: 16px 20px;
+      text-align: center;
+      font-size: 1rem;
+      font-weight: 700;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .result-body { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+
+    .result-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      min-height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      transition: all 0.3s;
+    }
+
+    .result-box .placeholder {
+      color: #9ca3af;
+      font-size: 0.88rem;
+      font-weight: 600;
+      line-height: 1.6;
+    }
+
+    /* Result states */
+    .result-box.stroke {
+      background: var(--danger-light);
+      border-color: #fca5a5;
+    }
+
+    .result-box.tidak-stroke {
+      background: var(--success-light);
+      border-color: #86efac;
+    }
+
+    .result-classification {
+      font-size: 1.25rem;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .result-classification.stroke-text { color: var(--danger); }
+    .result-classification.ok-text { color: var(--success); }
+
+    .result-sub {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* Confidence bar */
+    .confidence-wrap { padding: 4px 0; }
+
+    .conf-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .bar-track {
+      width: 100%;
+      height: 10px;
+      background: #e5e7eb;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      width: 0%;
+      transition: width 0.8s cubic-bezier(.4,0,.2,1), background 0.3s;
+    }
+
+    .bar-fill.high { background: var(--danger); }
+    .bar-fill.mid  { background: var(--warning); }
+    .bar-fill.low  { background: var(--success); }
+
+    .threshold-note {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+      margin-top: 8px;
+    }
+
+    /* Loading spinner */
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 8px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Error */
+    .error-msg {
+      background: var(--danger-light);
+      border: 1px solid #fca5a5;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.83rem;
+      color: var(--danger);
+      display: none;
+    }
+
+    .error-msg.show { display: block; }
+
+    /* Validation highlight */
+    .q-box.invalid { border-color: #fca5a5; background: #fff9f9; }
+  </style>
+</head>
+<body>
+
+<div class="page-title">
+  <h1>🧠 Sistem Deteksi Penyakit Stroke</h1>
+</div>
+
+<div class="layout">
+
+  <!-- ===== FORM ===== -->
+  <div class="form-card">
+    <div class="form-header">
+      <h2>Form Pertanyaan</h2>
+      <p>Mohon mengisi seluruh pertanyaan dengan jujur</p>
+    </div>
+    <div class="form-body">
+
+      <!-- Usia -->
+      <div class="q-box" id="box-age">
+        <div class="q-label">Masukan usia anda</div>
+        <input type="number" class="q-input" id="age" placeholder="Ex. : 32" min="1" max="120" />
+      </div>
+
+      <!-- Jenis Kelamin -->
+      <div class="q-box" id="box-gender">
+        <div class="q-label">Jenis kelamin anda</div>
+        <div class="btn-group" id="gender">
+          <button class="toggle-btn" onclick="select('gender', this, 'Laki-Laki')">Laki – Laki</button>
+          <button class="toggle-btn" onclick="select('gender', this, 'Perempuan')">Perempuan</button>
+        </div>
+      </div>
+
+      <!-- Hipertensi -->
+      <div class="q-box" id="box-hypertension">
+        <div class="q-label">Apakah Anda memiliki riwayat hipertensi?</div>
+        <div class="btn-group" id="hypertension">
+          <button class="toggle-btn" onclick="select('hypertension', this, 'Iya')">Iya</button>
+          <button class="toggle-btn" onclick="select('hypertension', this, 'Tidak')">Tidak</button>
+        </div>
+      </div>
+
+      <!-- Jantung -->
+      <div class="q-box" id="box-heart_disease">
+        <div class="q-label">Apakah Anda memiliki riwayat penyakit jantung?</div>
+        <div class="btn-group" id="heart_disease">
+          <button class="toggle-btn" onclick="select('heart_disease', this, 'Iya')">Iya</button>
+          <button class="toggle-btn" onclick="select('heart_disease', this, 'Tidak')">Tidak</button>
+        </div>
+      </div>
+
+      <!-- BMI -->
+      <div class="q-box" id="box-bmi">
+        <div class="q-label">Berapa indeks massa tubuh (BMI) Anda?</div>
+        <input type="number" class="q-input" id="bmi" placeholder="Ex. : 78" step="0.1" min="10" max="100" />
+      </div>
+
+      <!-- Glukosa -->
+      <div class="q-box" id="box-avg_glucose_level">
+        <div class="q-label">Berapa kadar glukosa darah rata-rata Anda?</div>
+        <input type="number" class="q-input" id="avg_glucose_level" placeholder="Ex. : 100" step="0.01" min="50" max="300" />
+      </div>
+
+      <!-- Merokok -->
+      <div class="q-box" id="box-smoking_status">
+        <div class="q-label">Apakah anda perokok?</div>
+        <div class="btn-group" id="smoking_status">
+          <button class="toggle-btn" onclick="select('smoking_status', this, 'Perokok aktif')">Perokok aktif</button>
+          <button class="toggle-btn" onclick="select('smoking_status', this, 'Mantan Merokok')">Mantan Merokok</button>
+          <button class="toggle-btn" onclick="select('smoking_status', this, 'Tidak merokok')">Tidak merokok</button>
+        </div>
+      </div>
+
+      <!-- Menikah -->
+      <div class="q-box" id="box-ever_married">
+        <div class="q-label">Pernah menikah?</div>
+        <div class="btn-group" id="ever_married">
+          <button class="toggle-btn" onclick="select('ever_married', this, 'Menikah')">Menikah</button>
+          <button class="toggle-btn" onclick="select('ever_married', this, 'Belum menikah')">Belum menikah</button>
+        </div>
+      </div>
+
+      <!-- Pekerjaan -->
+      <div class="q-box" id="box-work_type">
+        <div class="q-label">Pekerjaan yang anda miliki</div>
+        <div class="btn-group" id="work_type">
+          <button class="toggle-btn" onclick="select('work_type', this, 'Anak-Anak')">Anak-Anak</button>
+          <button class="toggle-btn" onclick="select('work_type', this, 'PNS')">PNS</button>
+          <button class="toggle-btn" onclick="select('work_type', this, 'Belum pernah bekerja')">Belum pernah bekerja</button>
+          <button class="toggle-btn" onclick="select('work_type', this, 'Swasta')">Swasta</button>
+          <button class="toggle-btn" style="flex-basis: 100%" onclick="select('work_type', this, 'Wiraswasta/Pekerja mandiri')">Wiraswasta/Pekerja mandiri</button>
+        </div>
+      </div>
+
+      <!-- Tempat Tinggal -->
+      <div class="q-box" id="box-residence_type">
+        <div class="q-label">Daerah tempat tinggal?</div>
+        <div class="btn-group" id="residence_type">
+          <button class="toggle-btn" onclick="select('residence_type', this, 'Perkotaan')">Perkotaan</button>
+          <button class="toggle-btn" onclick="select('residence_type', this, 'Perdesaan')">Perdesaan</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="error-msg" id="error-msg">⚠️ <span id="error-text"></span></div>
+    <div class="submit-wrap">
+      <button class="submit-btn" id="submit-btn" onclick="submitForm()">SUBMIT</button>
+    </div>
+  </div>
+
+  <!-- ===== RESULT ===== -->
+  <div class="result-card">
+    <div class="result-header">Hasil Akhir</div>
+    <div class="result-body">
+
+      <!-- Classification Result -->
+      <div class="result-box" id="result-classification">
+        <div class="placeholder">
+          Hasil Klasifikasi<br />
+          <span style="color:#b0b7c3;font-weight:400">"Terindikasi Stroke" atau<br/>"Tidak terindikasi Stroke"</span>
+        </div>
+      </div>
+
+      <!-- Confidence Level -->
+      <div class="result-box" id="result-confidence" style="flex-direction:column; align-items:stretch; min-height:120px">
+        <div class="placeholder" style="text-align:center; width:100%">
+          Tingkat kepercayaan klasifikasi<br/>
+          <span style="color:#b0b7c3;font-weight:400">0–100%</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // State
+  const selectedValues = {};
+
+  function select(field, btn, value) {
+    selectedValues[field] = value;
+    const group = document.getElementById(field);
+    group.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('box-' + field)?.classList.remove('invalid');
+  }
+
+  const fields = [
+    { id: 'age', type: 'input', label: 'Usia' },
+    { id: 'gender', type: 'toggle', label: 'Jenis kelamin' },
+    { id: 'hypertension', type: 'toggle', label: 'Riwayat hipertensi' },
+    { id: 'heart_disease', type: 'toggle', label: 'Riwayat penyakit jantung' },
+    { id: 'bmi', type: 'input', label: 'BMI' },
+    { id: 'avg_glucose_level', type: 'input', label: 'Kadar glukosa darah' },
+    { id: 'smoking_status', type: 'toggle', label: 'Status merokok' },
+    { id: 'ever_married', type: 'toggle', label: 'Status pernikahan' },
+    { id: 'work_type', type: 'toggle', label: 'Jenis pekerjaan' },
+    { id: 'residence_type', type: 'toggle', label: 'Daerah tempat tinggal' },
+  ];
+
+  function validate() {
+    let valid = true;
+    let missing = [];
+
+    fields.forEach(f => {
+      const box = document.getElementById('box-' + f.id);
+      if (f.type === 'input') {
+        const val = document.getElementById(f.id).value.trim();
+        if (!val) {
+          valid = false;
+          missing.push(f.label);
+          box?.classList.add('invalid');
+        } else {
+          box?.classList.remove('invalid');
+        }
+      } else {
+        if (!selectedValues[f.id]) {
+          valid = false;
+          missing.push(f.label);
+          box?.classList.add('invalid');
+        } else {
+          box?.classList.remove('invalid');
+        }
+      }
+    });
+
+    return { valid, missing };
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error-msg');
+    document.getElementById('error-text').textContent = msg;
+    el.classList.add('show');
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function hideError() {
+    document.getElementById('error-msg').classList.remove('show');
+  }
+
+  function showLoading() {
+    const classBox = document.getElementById('result-classification');
+    classBox.className = 'result-box';
+    classBox.innerHTML = `
+      <div>
+        <div class="spinner"></div>
+        <div style="font-size:0.85rem;color:var(--muted);margin-top:4px">Menganalisis data...</div>
+      </div>`;
+    const confBox = document.getElementById('result-confidence');
+    confBox.className = 'result-box';
+    confBox.style.flexDirection = '';
+    confBox.style.alignItems = '';
+    confBox.innerHTML = '';
+  }
+
+  function showResult(data) {
+    const isStroke = data.prediction === 'STROKE';
+    const prob = data.probability;
+    const threshold = data.threshold;
+
+    // Classification box
+    const classBox = document.getElementById('result-classification');
+    classBox.className = 'result-box ' + (isStroke ? 'stroke' : 'tidak-stroke');
+    classBox.innerHTML = `
+      <div>
+        <div class="result-classification ${isStroke ? 'stroke-text' : 'ok-text'}">
+          ${isStroke ? '⚠️ Terindikasi Stroke' : '✅ Tidak Terindikasi Stroke'}
+        </div>
+        <div class="result-sub">${isStroke ? 'Segera konsultasikan ke dokter.' : 'Risiko stroke Anda tergolong rendah.'}</div>
+      </div>`;
+
+    // Confidence box
+    const confBox = document.getElementById('result-confidence');
+    confBox.className = 'result-box';
+    confBox.style.flexDirection = 'column';
+    confBox.style.alignItems = 'stretch';
+
+    let barClass = prob >= 60 ? 'high' : prob >= 40 ? 'mid' : 'low';
+
+    confBox.innerHTML = `
+      <div class="confidence-wrap">
+        <div class="conf-label">
+          <span>Tingkat Kepercayaan Klasifikasi</span>
+          <span style="font-family:'DM Mono',monospace; font-size:1rem">${prob}%</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill ${barClass}" id="bar-fill" style="width:0%"></div>
+        </div>
+        <div class="threshold-note">Threshold optimal model: ${threshold}%</div>
+      </div>`;
+
+    // Animate bar
+    setTimeout(() => {
+      document.getElementById('bar-fill').style.width = prob + '%';
+    }, 80);
+  }
+
+  async function submitForm() {
+    hideError();
+    const { valid, missing } = validate();
+
+    if (!valid) {
+      showError(`Harap lengkapi: ${missing.join(', ')}`);
+      return;
+    }
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Memproses...';
+    showLoading();
+
+    const payload = {
+      age: document.getElementById('age').value,
+      bmi: document.getElementById('bmi').value,
+      avg_glucose_level: document.getElementById('avg_glucose_level').value,
+      gender: selectedValues.gender,
+      hypertension: selectedValues.hypertension,
+      heart_disease: selectedValues.heart_disease,
+      smoking_status: selectedValues.smoking_status,
+      ever_married: selectedValues.ever_married,
+      work_type: selectedValues.work_type,
+      residence_type: selectedValues.residence_type
+    };
+
+    try {
+      const res = await fetch('/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (data.error) {
+        showError('Error dari server: ' + data.error);
+        document.getElementById('result-classification').innerHTML = '<div class="placeholder">Terjadi kesalahan.</div>';
+        document.getElementById('result-confidence').innerHTML = '<div class="placeholder">—</div>';
+      } else {
+        showResult(data);
+      }
+    } catch (err) {
+      showError('Tidak dapat terhubung ke server. Pastikan Flask sudah berjalan.');
+      document.getElementById('result-classification').innerHTML = '<div class="placeholder">Gagal terhubung ke server.</div>';
+      document.getElementById('result-confidence').innerHTML = '<div class="placeholder">—</div>';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'SUBMIT';
+    }
+  }
+</script>
+</body>
+</html>
