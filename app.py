@@ -25,9 +25,6 @@ def load_model():
     print(f"[INFO] Model loaded. Threshold: {best_threshold}")
     print(f"[INFO] Feature names: {feature_names}")
 
-# Panggil fungsi load_model di sini agar selalu dieksekusi saat server startup
-load_model()
-
 @app.route("/")
 def index():
     return send_from_directory("static", "index.html")
@@ -80,5 +77,5 @@ def predict():
         return jsonify({"error": str(e)}), 400
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    load_model()
+    app.run(debug=True, port=5000)
