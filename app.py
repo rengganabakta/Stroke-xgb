@@ -72,8 +72,8 @@ def predict():
 
         return jsonify({
             "prediction": "STROKE" if prediction == 1 else "TIDAK STROKE",
-            "probability": round(prob_stroke * 100, 2),
-            "threshold": round(best_threshold * 100, 2)
+            "probability": round(float(prob_stroke) * 100, 2),
+            "threshold": round(float(best_threshold) * 100, 2)
         })
 
     except Exception as e:
