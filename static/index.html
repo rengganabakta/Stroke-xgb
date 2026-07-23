@@ -527,9 +527,11 @@
     classBox.innerHTML = `
       <div>
         <div class="result-classification ${isStroke ? 'stroke-text' : 'ok-text'}">
-          ${isStroke ? '⚠️ Memerlukan Pemeriksaan Lebih Lanjut' : '✅ Tidak Terdeteksi Gejala Krusial'}
+          ${isStroke ? '⚠️ Terdeteksi Berisiko Tinggi Stroke' : '✅ Risiko Stroke Tergolong Rendah'}
         </div>
-        <div class="result-sub">${isStroke ? 'Segera konsultasikan ke dokter.' : 'Risiko stroke Anda tergolong rendah.'}</div>
+        <div class="result-sub">
+          ${isStroke ? 'Hasil analisis menunjukkan adanya risiko stroke. Segera konsultasikan ke dokter.' : 'Hasil analisis menunjukkan risiko stroke Anda tergolong rendah.'}
+        </div>
       </div>`;
 
     // Confidence box
